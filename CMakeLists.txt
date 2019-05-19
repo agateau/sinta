@@ -14,6 +14,7 @@ set(appshot_SRCS
     main.cpp
     MainWindow.cpp
     MainWindow.ui
+    ScriptRunner.cpp
     Tools.cpp
     )
 
