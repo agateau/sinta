@@ -1,8 +1,10 @@
 #include "Tools.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QQmlEngine>
 #include <QPixmap>
+#include <QTimer>
 #include <QWidget>
 
 Tools::Tools(QObject* parent) : QObject(parent) {
@@ -25,4 +27,13 @@ QWidget* Tools::activeWindow() {
 
 void Tools::processEvents() {
     QApplication::processEvents();
+}
+
+void Tools::setTimeout(const QJSValue& value_, int ms) {
+    QJSValue value = value_;
+    QTimer::singleShot(ms, nullptr, [value] {
+        // Don't know why, but g++ thinks `value` is const, so create a local
+        // copy to be able to call `QJSValue::call()`
+        QJSValue(value).call();
+    });
 }
