@@ -2,8 +2,8 @@
 
 #include <QApplication>
 #include <QDebug>
-#include <QQmlEngine>
 #include <QPixmap>
+#include <QQmlEngine>
 #include <QTimer>
 #include <QWidget>
 
