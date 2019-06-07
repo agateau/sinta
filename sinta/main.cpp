@@ -42,12 +42,13 @@ struct Arguments {
 };
 
 std::optional<QByteArray> findSintaLib() {
-    QByteArray libPath = SINTALIB_BUILD_PATH;
-    if (!QFile::exists(libPath)) {
-        std::cerr << "Cannot find our library: " << qPrintable(libPath) << " does not exist.\n";
-        return {};
+    for (const auto& path : {SINTALIB_BUILD_PATH, SINTALIB_INSTALL_PATH}) {
+        if (QFile::exists(path)) {
+            return std::move(path);
+        }
     }
-    return std::move(libPath);
+    std::cerr << "Cannot find Sinta library";
+    return {};
 }
 
 int main(int argc, char** argv) {

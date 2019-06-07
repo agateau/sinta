@@ -2,5 +2,6 @@
 #define CONFIG_H
 
 #define SINTALIB_BUILD_PATH "@CMAKE_CURRENT_BINARY_DIR@/libsintalib.so"
+#define SINTALIB_INSTALL_PATH "@CMAKE_INSTALL_PREFIX@/lib/libsintalib.so"
 
 #endif /* CONFIG_H */
