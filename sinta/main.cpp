@@ -10,6 +10,7 @@
 #include <QProcess>
 
 #include <iostream>
+#include <optional>
 
 static constexpr char PRELOAD_ENV[] = "LD_PRELOAD";
 
@@ -43,19 +44,26 @@ struct Arguments {
     }
 };
 
+std::optional<QByteArray> findSintaLib() {
+    QByteArray libPath = SINTA_LIB_PATH;
+    if (!QFile::exists(libPath)) {
+        std::cerr << "Cannot find our library: " << qPrintable(libPath) << " does not exist.\n";
+        return {};
+    }
+    return std::move(libPath);
+}
+
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     Arguments args;
     if (!args.process(app)) {
         return 1;
     }
-
-    QByteArray libPath = SINTA_LIB_PATH;
-    if (!QFile::exists(libPath)) {
-        std::cerr << "Cannot find our library: " << qPrintable(libPath) << " does not exist.\n";
+    auto libPath = findSintaLib();
+    if (!libPath.has_value()) {
         return 2;
     }
-    qputenv(PRELOAD_ENV, libPath);
+    qputenv(PRELOAD_ENV, libPath.value());
     qputenv(INJECTOR_SCRIPT_ENV, args.script.toUtf8());
 
     return QProcess::execute(args.executable);
