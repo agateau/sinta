@@ -1,7 +1,4 @@
-//FIXME
-//#include "Config.h"
-#define SINTA_LIB_PATH "/home/perso/build/sinta/sinta/libsintalib.so"
-
+#include "config.h"
 #include "Injector.h"
 
 #include <QCoreApplication>
@@ -45,7 +42,7 @@ struct Arguments {
 };
 
 std::optional<QByteArray> findSintaLib() {
-    QByteArray libPath = SINTA_LIB_PATH;
+    QByteArray libPath = SINTALIB_BUILD_PATH;
     if (!QFile::exists(libPath)) {
         std::cerr << "Cannot find our library: " << qPrintable(libPath) << " does not exist.\n";
         return {};

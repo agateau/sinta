@@ -1,0 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define SINTALIB_BUILD_PATH "@CMAKE_CURRENT_BINARY_DIR@/libsintalib.so"
+
+#endif /* CONFIG_H */
