@@ -3,6 +3,7 @@
 
 #include <QCoreApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QFile>
 #include <QProcess>
 
@@ -14,6 +15,7 @@ static constexpr char PRELOAD_ENV[] = "LD_PRELOAD";
 struct Arguments {
     QString script;
     QString executable;
+    QStringList arguments;
 
     bool process(const QCoreApplication& app) {
         QCommandLineParser parser;
@@ -22,21 +24,22 @@ struct Arguments {
         parser.process(app);
 
         auto args = parser.positionalArguments();
-        if (args.length() != 2) {
+        if (args.length() < 2) {
             std::cerr << "Wrong number of arguments\n";
             return false;
         }
 
-        script = args.at(0);
+        script = args.takeFirst();
         if (!QFile::exists(script)) {
             std::cerr << qPrintable(script) << " does not exist\n";
             return false;
         }
-        executable = args.at(1);
+        executable = args.takeFirst();
         if (!QFile::exists(executable)) {
             std::cerr << qPrintable(executable) << " does not exist\n";
             return false;
         }
+        arguments = args;
         return true;
     }
 };
@@ -64,5 +67,5 @@ int main(int argc, char** argv) {
     qputenv(PRELOAD_ENV, libPath.value());
     qputenv(INJECTOR_SCRIPT_ENV, args.script.toUtf8());
 
-    return QProcess::execute(args.executable);
+    return QProcess::execute(args.executable, args.arguments);
 }
