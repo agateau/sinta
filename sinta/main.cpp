@@ -19,6 +19,8 @@ struct Arguments {
 
     bool process(const QCoreApplication& app) {
         QCommandLineParser parser;
+        parser.addHelpOption();
+        parser.addVersionOption();
         parser.addPositionalArgument("script", "Script to run");
         parser.addPositionalArgument("executable", "Executable to start");
         parser.process(app);
