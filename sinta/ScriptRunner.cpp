@@ -49,13 +49,16 @@ ScriptRunner::~ScriptRunner() {
 void ScriptRunner::runScript(const QString& path) {
     optional<QString> maybeScript = loadScript(path);
     if (!maybeScript.has_value()) {
-        return;
+        qFatal("Loading script failed");
     }
     QJSValue result = mEngine->evaluate(maybeScript.value(), path);
     if (result.isError()) {
-        qWarning() << "Error line" << result.property("lineNumber").toInt() << ":"
-                   << result.toString();
-    } else if (!result.isUndefined()) {
+        int line = result.property("lineNumber").toInt();
+        QString message = result.toString();
+        qFatal("Error line %d: %s", line, qPrintable(message));
+    }
+
+    if (!result.isUndefined()) {
         qInfo() << "result=" << result.toString();
     }
 }
