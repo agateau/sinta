@@ -1,25 +1,5 @@
-function waitFor(fcn) {
-    while (true) {
-        var result = fcn();
-        if (result) {
-            return result;
-        }
-        tools.processEvents();
-    }
-}
-
-function waitForActiveWindow(excluded) {
-    return waitFor(function() {
-        var window = tools.activeWindow();
-        if (window === null || window === excluded) {
-            return null;
-        }
-        return window;
-    });
-}
-
 // Wait for the main window to be visible
-var mainWindow = waitForActiveWindow();
+var mainWindow = tools.waitForActiveWindow();
 console.log("mainWindow=" + mainWindow);
 
 // Take a screenshot of it
@@ -36,7 +16,7 @@ for (idx = 0; idx < 10; ++idx) {
     console.log(fontName);
 
     popupButton.click();
-    var popup = waitForActiveWindow(mainWindow);
+    var popup = tools.waitForActiveWindow(mainWindow);
     tools.screenshot(popup, fontName + ".png");
     popup.close();
 }

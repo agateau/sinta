@@ -58,6 +58,16 @@ public:
      * browsers.
      */
     Q_INVOKABLE void setTimeout(const QJSValue& function, int ms);
+
+    /**
+     * Process events until a window is active.
+     * If excludedWindow is not null, ignore the active window if it is excludedWindow.
+     * This is useful to find child windows: you can just ignore the parent.
+     *
+     * Returns the window if found or nullptr if we waited for too long
+     */
+    Q_INVOKABLE QWidget* waitForActiveWindow(QWidget* excludedWindow = nullptr,
+                                             int maxTimeout = 3000);
 };
 
 #endif // TOOLS_H

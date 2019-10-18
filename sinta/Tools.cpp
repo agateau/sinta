@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <QPixmap>
 #include <QQmlEngine>
+#include <QTime>
 #include <QTimer>
 #include <QWidget>
 
@@ -54,4 +55,21 @@ void Tools::setTimeout(const QJSValue& value_, int ms) {
         // copy to be able to call `QJSValue::call()`
         QJSValue(value).call();
     });
+}
+
+QWidget* Tools::waitForActiveWindow(QWidget* excludedWindow, int maxTimeout) {
+    QTime chrono;
+    chrono.start();
+    while (chrono.elapsed() < maxTimeout) {
+        auto* window = activeWindow();
+        if (window && window != excludedWindow) {
+            return window;
+        }
+        processEvents();
+    }
+    qWarning() << QString("Call to waitForActiveWindow(%1, %2) hit timeout (waited for %3ms).")
+                      .arg(reinterpret_cast<intptr_t>(excludedWindow))
+                      .arg(maxTimeout)
+                      .arg(chrono.elapsed());
+    return nullptr;
 }
