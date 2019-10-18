@@ -23,16 +23,41 @@
 
 class QJSValue;
 
+/**
+ * An instance of this object is exposed as `tools` in the JavaScript world
+ */
 class Tools : public QObject {
     Q_OBJECT
 public:
     explicit Tools(QObject* parent = nullptr);
 
+    /**
+     * Takes a screenshot of widget, save it under path
+     */
     Q_INVOKABLE void screenshot(QWidget* widget, const QString& path);
-    Q_INVOKABLE QObject* findChild(QObject* parent, const QString& name);
+
+    /**
+     * Returns the currently active window, if any
+     */
     Q_INVOKABLE QWidget* activeWindow();
+
+    /**
+     * Returns the first child of parent whose objectName is name
+     */
+    Q_INVOKABLE QObject* findChild(QObject* parent, const QString& name);
+
+    /**
+     * Let the main loop process events
+     */
     Q_INVOKABLE void processEvents();
-    Q_INVOKABLE void setTimeout(const QJSValue& value, int ms);
+
+    /**
+     * Run function after ms milliseconds.
+     *
+     * Equivalent to the `window.setTimeout()` method available in web
+     * browsers.
+     */
+    Q_INVOKABLE void setTimeout(const QJSValue& function, int ms);
 };
 
 #endif // TOOLS_H
