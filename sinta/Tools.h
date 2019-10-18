@@ -21,9 +21,11 @@
 
 #include <QObject>
 
+#include <memory>
+
+class QDeadlineTimer;
 class QJSEngine;
 class QJSValue;
-class QTime;
 
 /**
  * An instance of this object is exposed as `tools` in the JavaScript world
@@ -87,7 +89,7 @@ private:
 
     void waitForActiveWindowAsyncImpl(const QJSValue& function,
                                       QWidget* excludedWindow,
-                                      const QTime& deadLine);
+                                      const QDeadlineTimer& timer);
 };
 
 #endif // TOOLS_H

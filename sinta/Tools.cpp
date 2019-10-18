@@ -19,10 +19,10 @@
 #include "Tools.h"
 
 #include <QApplication>
+#include <QDeadlineTimer>
 #include <QDebug>
 #include <QPixmap>
 #include <QQmlEngine>
-#include <QTime>
 #include <QTimer>
 #include <QWidget>
 
@@ -66,33 +66,30 @@ void Tools::setTimeout(const QJSValue& function, int ms) {
 }
 
 QWidget* Tools::waitForActiveWindow(QWidget* excludedWindow, int maxTimeout) {
-    QTime chrono;
-    chrono.start();
-    while (chrono.elapsed() < maxTimeout) {
+    QDeadlineTimer timer(maxTimeout);
+    while (!timer.hasExpired()) {
         auto* window = activeWindow();
         if (window && window != excludedWindow) {
             return window;
         }
         processEvents();
     }
-    qWarning() << QString("Call to waitForActiveWindow(%1, %2) hit timeout (waited for %3ms).")
+    qWarning() << QString("Call to waitForActiveWindow(%1, %2) hit timeout.")
                       .arg(reinterpret_cast<intptr_t>(excludedWindow))
-                      .arg(maxTimeout)
-                      .arg(chrono.elapsed());
+                      .arg(maxTimeout);
     return nullptr;
 }
 
 void Tools::waitForActiveWindowAsync(const QJSValue& function,
                                      QWidget* excludedWindow,
                                      int maxTimeout) {
-    QTime deadLine = QTime::currentTime().addMSecs(maxTimeout);
-    waitForActiveWindowAsyncImpl(function, excludedWindow, deadLine);
+    waitForActiveWindowAsyncImpl(function, excludedWindow, QDeadlineTimer(maxTimeout));
 }
 
 void Tools::waitForActiveWindowAsyncImpl(const QJSValue& function,
                                          QWidget* excludedWindow,
-                                         const QTime& deadLine) {
-    if (QTime::currentTime() > deadLine) {
+                                         const QDeadlineTimer& timer) {
+    if (timer.hasExpired()) {
         qWarning() << QString("Call to waitForActiveWindowAsync() hit timeout.");
         checkJsCall(function, {QJSValue()});
         return;
@@ -104,8 +101,8 @@ void Tools::waitForActiveWindowAsyncImpl(const QJSValue& function,
         checkJsCall(function, {windowValue});
     } else {
         // Try again
-        QTimer::singleShot(0, this, [this, function, excludedWindow, deadLine] {
-            waitForActiveWindowAsyncImpl(function, excludedWindow, deadLine);
+        QTimer::singleShot(0, this, [this, function, excludedWindow, timer] {
+            waitForActiveWindowAsyncImpl(function, excludedWindow, timer);
         });
     }
 }
