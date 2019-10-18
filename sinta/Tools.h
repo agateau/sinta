@@ -21,7 +21,9 @@
 
 #include <QObject>
 
+class QJSEngine;
 class QJSValue;
+class QTime;
 
 /**
  * An instance of this object is exposed as `tools` in the JavaScript world
@@ -29,7 +31,7 @@ class QJSValue;
 class Tools : public QObject {
     Q_OBJECT
 public:
-    explicit Tools(QObject* parent = nullptr);
+    explicit Tools(QJSEngine* engine, QObject* parent = nullptr);
 
     /**
      * Takes a screenshot of widget, save it under path
@@ -68,6 +70,24 @@ public:
      */
     Q_INVOKABLE QWidget* waitForActiveWindow(QWidget* excludedWindow = nullptr,
                                              int maxTimeout = 3000);
+
+    /**
+     * Async version of waitForActiveWindow.
+     * Regularly calls itself back until it finds an active window or the timeout is hit.
+     *
+     * If it finds an active window, calls function with the window as the first argument.
+     * If it hits the timeout, calls function with a null object as the first argument.
+     */
+    Q_INVOKABLE void waitForActiveWindowAsync(const QJSValue& function,
+                                              QWidget* excludedWindow = nullptr,
+                                              int maxTimeout = 3000);
+
+private:
+    QJSEngine* const mEngine;
+
+    void waitForActiveWindowAsyncImpl(const QJSValue& function,
+                                      QWidget* excludedWindow,
+                                      const QTime& deadLine);
 };
 
 #endif // TOOLS_H

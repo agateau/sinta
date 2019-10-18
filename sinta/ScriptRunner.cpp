@@ -40,7 +40,7 @@ optional<QString> loadScript(const QString& path) {
 
 ScriptRunner::ScriptRunner() : mEngine(std::make_unique<QJSEngine>()) {
     mEngine->installExtensions(QJSEngine::AllExtensions);
-    mEngine->globalObject().setProperty("tools", mEngine->newQObject(new Tools));
+    mEngine->globalObject().setProperty("tools", mEngine->newQObject(new Tools(mEngine.get())));
 }
 
 ScriptRunner::~ScriptRunner() {

@@ -26,7 +26,7 @@
 #include <QTimer>
 #include <QWidget>
 
-Tools::Tools(QObject* parent) : QObject(parent) {
+Tools::Tools(QJSEngine* engine, QObject* parent) : QObject(parent), mEngine(engine) {
 }
 
 void Tools::screenshot(QWidget* widget, const QString& path) {
@@ -72,4 +72,32 @@ QWidget* Tools::waitForActiveWindow(QWidget* excludedWindow, int maxTimeout) {
                       .arg(maxTimeout)
                       .arg(chrono.elapsed());
     return nullptr;
+}
+
+void Tools::waitForActiveWindowAsync(const QJSValue& function,
+                                     QWidget* excludedWindow,
+                                     int maxTimeout) {
+    QTime deadLine = QTime::currentTime().addMSecs(maxTimeout);
+    waitForActiveWindowAsyncImpl(function, excludedWindow, deadLine);
+}
+
+void Tools::waitForActiveWindowAsyncImpl(const QJSValue& function,
+                                         QWidget* excludedWindow,
+                                         const QTime& deadLine) {
+    if (QTime::currentTime() > deadLine) {
+        qWarning() << QString("Call to waitForActiveWindowAsync() hit timeout.");
+        QJSValue(function).call({QJSValue()});
+        return;
+    }
+    auto* window = activeWindow();
+    if (window && window != excludedWindow) {
+        // We found it
+        auto windowValue = mEngine->newQObject(window);
+        QJSValue(function).call({windowValue});
+    } else {
+        // Try again
+        QTimer::singleShot(0, this, [this, function, excludedWindow, deadLine] {
+            waitForActiveWindowAsyncImpl(function, excludedWindow, deadLine);
+        });
+    }
 }
