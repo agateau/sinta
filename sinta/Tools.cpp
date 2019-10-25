@@ -19,13 +19,25 @@
 #include "Tools.h"
 
 #include <QApplication>
+#include <QDeadlineTimer>
 #include <QDebug>
 #include <QPixmap>
 #include <QQmlEngine>
 #include <QTimer>
 #include <QWidget>
 
-Tools::Tools(QObject* parent) : QObject(parent) {
+// Call a JS function, abort if it failed
+static QJSValue checkJsCall(const QJSValue& function, const QJSValueList& args = {}) {
+    auto result = QJSValue(function).call(args);
+    if (result.isError()) {
+        int line = result.property("lineNumber").toInt();
+        QString message = result.toString();
+        qFatal("Error line %d: %s", line, qPrintable(message));
+    }
+    return result;
+}
+
+Tools::Tools(QJSEngine* engine, QObject* parent) : QObject(parent), mEngine(engine) {
 }
 
 void Tools::screenshot(QWidget* widget, const QString& path) {
@@ -47,11 +59,50 @@ void Tools::processEvents() {
     QApplication::processEvents();
 }
 
-void Tools::setTimeout(const QJSValue& value_, int ms) {
-    QJSValue value = value_;
-    QTimer::singleShot(ms, nullptr, [value] {
-        // Don't know why, but g++ thinks `value` is const, so create a local
-        // copy to be able to call `QJSValue::call()`
-        QJSValue(value).call();
+void Tools::setTimeout(const QJSValue& function, int ms) {
+    QTimer::singleShot(ms, nullptr, [function] {
+        checkJsCall(function);
     });
+}
+
+QWidget* Tools::waitForActiveWindow(QWidget* excludedWindow, int maxTimeout) {
+    QDeadlineTimer timer(maxTimeout);
+    while (!timer.hasExpired()) {
+        auto* window = activeWindow();
+        if (window && window != excludedWindow) {
+            return window;
+        }
+        processEvents();
+    }
+    qWarning() << QString("Call to waitForActiveWindow(%1, %2) hit timeout.")
+                      .arg(reinterpret_cast<intptr_t>(excludedWindow))
+                      .arg(maxTimeout);
+    return nullptr;
+}
+
+void Tools::waitForActiveWindowAsync(const QJSValue& function,
+                                     QWidget* excludedWindow,
+                                     int maxTimeout) {
+    waitForActiveWindowAsyncImpl(function, excludedWindow, QDeadlineTimer(maxTimeout));
+}
+
+void Tools::waitForActiveWindowAsyncImpl(const QJSValue& function,
+                                         QWidget* excludedWindow,
+                                         const QDeadlineTimer& timer) {
+    if (timer.hasExpired()) {
+        qWarning() << QString("Call to waitForActiveWindowAsync() hit timeout.");
+        checkJsCall(function, {QJSValue()});
+        return;
+    }
+    auto* window = activeWindow();
+    if (window && window != excludedWindow) {
+        // We found it
+        auto windowValue = mEngine->newQObject(window);
+        checkJsCall(function, {windowValue});
+    } else {
+        // Try again
+        QTimer::singleShot(0, this, [this, function, excludedWindow, timer] {
+            waitForActiveWindowAsyncImpl(function, excludedWindow, timer);
+        });
+    }
 }
